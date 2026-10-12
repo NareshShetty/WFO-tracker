@@ -1,0 +1,4 @@
+# Google Maps Timeline exports and local backups contain sensitive location data.
+Timeline*.json
+timeline*.json
+office-days-backup.json
