@@ -1,15 +1,16 @@
 # Office Days
 
-A static browser app that compares Google Maps Timeline visits with a configured office location to calculate attendance. Timeline data, office settings, and holiday or leave selections stay in the current browser.
+A static browser app that compares Google Maps Timeline visits with a configured office location to calculate attendance. Office days can also be added manually when Timeline data is unavailable or incomplete. Timeline data, office settings, manual office days, and holiday or leave selections stay in the current browser.
 
 ## Use
 
-1. Open **Office settings** and enter the office coordinates and visit radius.
-2. Import one or more Google Maps Timeline JSON exports.
-3. Review monthly attendance and attendance achieved to date. A visit spanning multiple dates counts on each date it covers.
-4. Select dates in the calendar to mark holidays or leave. Weekends are excluded automatically.
+1. Open **Office settings** and enter the office coordinates and visit radius. The default office name is **Etamin Prestige**.
+2. Optionally import one or more Google Maps Timeline JSON exports.
+3. Select any calendar date and choose **Mark as office day** to record attendance manually. Timeline data is not required.
+4. Review monthly attendance and attendance achieved to date. A visit spanning multiple dates counts on each date it covers.
+5. Select dates in the calendar to mark holidays or leave. Weekends are excluded automatically.
 
-Attendance is calculated as eligible office days divided by eligible workdays. Eligible workdays exclude weekends and dates marked as holidays or leave.
+Attendance is calculated as eligible office days divided by eligible workdays. Eligible workdays exclude weekends and dates marked as holidays or leave. Manually entered days are included in attendance calculations and in downloaded backups.
 
 ## Run locally
 

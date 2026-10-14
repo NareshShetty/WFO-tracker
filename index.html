@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7fb">
   <title>Office Days</title>
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <main class="shell">
@@ -21,7 +21,7 @@
       <div>
         <p class="eyebrow">YOUR WORKPLACE, AT A GLANCE</p>
         <h1>Office attendance</h1>
-        <p class="subheading">See the days you visited your office, based on your Google Maps Timeline export.</p>
+        <p class="subheading">Import Google Maps Timeline data or add office days manually, then track your monthly attendance.</p>
       </div>
       <label class="button button-primary upload-button" for="timeline-files">
         <span aria-hidden="true">＋</span> Import Timeline
@@ -31,7 +31,7 @@
 
     <section class="notice" aria-label="Privacy and import information">
       <span class="notice-icon" aria-hidden="true">i</span>
-      <p>Timeline data, office settings, and holiday or leave selections are saved only in this browser. Google Maps does not provide this app with automatic access to your private Timeline. Import an updated JSON export to refresh your records.</p>
+      <p>Timeline data, office settings, manual office days, and holiday or leave selections are saved only in this browser. Google Maps does not provide this app with automatic access to your private Timeline. Import an updated JSON export to refresh your records.</p>
     </section>
 
     <section class="settings-panel card" id="settings-panel" hidden>
@@ -44,7 +44,7 @@
       <form id="office-form" class="settings-form">
         <label>
           Office name
-          <input id="office-name" type="text" maxlength="60" placeholder="My office">
+          <input id="office-name" type="text" maxlength="60" placeholder="Etamin Prestige">
         </label>
         <label>
           Latitude
@@ -103,9 +103,9 @@
           <div class="section-heading">
             <div>
               <h2>Attendance calendar</h2>
-              <p>Highlighted dates are days you visited the office.</p>
+              <p>Select any date to review visits, add an office day manually, or exclude a holiday or leave.</p>
             </div>
-            <span class="legend"><span class="legend-dot"></span> Office day <span class="legend-exclusion"></span> Holiday / leave <span class="legend-weekend"></span> Weekend</span>
+            <span class="legend"><span class="legend-dot"></span> Timeline <span class="legend-manual"></span> Manual <span class="legend-exclusion"></span> Holiday / leave <span class="legend-weekend"></span> Weekend</span>
           </div>
           <div class="calendar" id="calendar" aria-live="polite"></div>
         </section>
@@ -125,6 +125,10 @@
               <button class="text-button" type="button" id="clear-exclusion">Remove exclusion</button>
             </div>
           </div>
+          <div id="manual-attendance-controls" class="date-exclusion-controls manual-attendance-controls" hidden>
+            <p id="manual-attendance-status" class="date-exclusion-status"></p>
+            <button class="button button-secondary" type="button" id="toggle-manual-attendance">Mark as office day</button>
+          </div>
           <div id="day-visits" class="day-visits">
             <div class="empty-state compact-empty">No date selected yet.</div>
           </div>
@@ -135,7 +139,7 @@
     <section class="card data-panel">
       <div class="section-heading">
         <div>
-          <h2>Your Timeline data</h2>
+          <h2>Attendance data</h2>
           <p id="data-summary">No visits imported yet.</p>
         </div>
         <div class="data-actions">
@@ -146,14 +150,14 @@
       <div id="import-status" class="status-message" role="status" aria-live="polite"></div>
       <div class="empty-state" id="empty-state">
         <div class="empty-icon" aria-hidden="true">⌖</div>
-        <strong>Start with a Timeline export</strong>
-        <p>Import a Google Maps Timeline JSON file. You can select more than one file, such as separate yearly exports.</p>
+        <strong>Add attendance your way</strong>
+        <p>Import Google Maps Timeline JSON files, mark office days manually on the calendar, or use both. Timeline data is optional.</p>
         <label class="button button-secondary" for="timeline-files">Choose JSON files</label>
       </div>
     </section>
 
     <footer>Private by design · Your data stays in this browser</footer>
   </main>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

@@ -3,8 +3,9 @@
 const STORAGE_KEY = "office-days-timeline-v1";
 const SETTINGS_KEY = "office-days-settings-v1";
 const EXCLUSIONS_KEY = "office-days-exclusions-v1";
+const MANUAL_DAYS_KEY = "office-days-manual-days-v1";
 const DAY_MS = 24 * 60 * 60 * 1000;
-const defaultSettings = { name: "My office", latitude: "", longitude: "", radius: 150 };
+const defaultSettings = { name: "Etamin Prestige", latitude: "", longitude: "", radius: 150 };
 
 const elements = {
   fileInput: document.getElementById("timeline-files"),
@@ -34,6 +35,9 @@ const elements = {
   markHoliday: document.getElementById("mark-holiday"),
   markLeave: document.getElementById("mark-leave"),
   clearExclusion: document.getElementById("clear-exclusion"),
+  manualAttendanceControls: document.getElementById("manual-attendance-controls"),
+  manualAttendanceStatus: document.getElementById("manual-attendance-status"),
+  toggleManualAttendance: document.getElementById("toggle-manual-attendance"),
   dayVisits: document.getElementById("day-visits"),
   dataSummary: document.getElementById("data-summary"),
   importStatus: document.getElementById("import-status"),
@@ -45,9 +49,19 @@ const elements = {
 
 let visits = loadFromStorage(STORAGE_KEY, []);
 let settings = { ...defaultSettings, ...loadFromStorage(SETTINGS_KEY, {}) };
+if (settings.name === "My office") settings.name = defaultSettings.name;
 let exclusions = loadFromStorage(EXCLUSIONS_KEY, {});
 if (!exclusions || typeof exclusions !== "object" || Array.isArray(exclusions)) exclusions = {};
+let manualDays = loadFromStorage(MANUAL_DAYS_KEY, []);
+if (!Array.isArray(manualDays)) manualDays = [];
+manualDays = new Set(manualDays.filter(isValidDateKey));
 let selectedDay = null;
+
+function isValidDateKey(key) {
+  if (typeof key !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+  const date = new Date(`${key}T12:00:00`);
+  return !Number.isNaN(date.getTime()) && localDateKey(date) === key;
+}
 
 function loadFromStorage(key, fallback) {
   try {
@@ -79,6 +93,15 @@ function validCoordinatePair(latitude, longitude) {
   return Number.isFinite(latitude) && Number.isFinite(longitude)
     && latitude >= -90 && latitude <= 90
     && longitude >= -180 && longitude <= 180;
+}
+
+function configuredOfficeCoordinates() {
+  if (settings.latitude === "" || settings.latitude === null || settings.latitude === undefined
+    || settings.longitude === "" || settings.longitude === null || settings.longitude === undefined) {
+    return null;
+  }
+  const coordinates = { latitude: Number(settings.latitude), longitude: Number(settings.longitude) };
+  return validCoordinatePair(coordinates.latitude, coordinates.longitude) ? coordinates : null;
 }
 
 function parseCoordinatePair(value) {
@@ -212,10 +235,8 @@ function distanceInMetres(first, second) {
 }
 
 function officeVisits() {
-  const latitude = Number(settings.latitude);
-  const longitude = Number(settings.longitude);
-  if (!validCoordinatePair(latitude, longitude)) return [];
-  const office = { latitude, longitude };
+  const office = configuredOfficeCoordinates();
+  if (!office) return [];
   return visits.filter((visit) =>
     distanceInMetres(office, visit) <= Number(settings.radius || defaultSettings.radius)
   );
@@ -262,6 +283,9 @@ function groupedOfficeVisits() {
       current.setDate(current.getDate() + 1);
     }
   });
+  manualDays.forEach((key) => {
+    if (!grouped.has(key)) grouped.set(key, []);
+  });
   return grouped;
 }
 
@@ -303,8 +327,11 @@ function renderCalendar() {
     button.textContent = String(day);
     const exclusion = exclusions[key];
     const dayLabel = exclusion ? `, ${exclusion}` : dateIsWeekend(key) ? ", weekend excluded" : "";
-    button.setAttribute("aria-label", `${date.toLocaleDateString(undefined, { dateStyle: "full" })}${officeDays.has(key) ? ", office day" : ""}${dayLabel}`);
+    const manualDay = manualDays.has(key);
+    const officeDayLabel = officeDays.has(key) ? manualDay ? ", manually added office day" : ", office day" : "";
+    button.setAttribute("aria-label", `${date.toLocaleDateString(undefined, { dateStyle: "full" })}${officeDayLabel}${dayLabel}`);
     if (officeDays.has(key)) button.classList.add("is-office", "is-clickable");
+    if (manualDay) button.classList.add("is-manual");
     if (exclusion) button.classList.add("is-excluded");
     if (dateIsWeekend(key)) button.classList.add("is-weekend");
     if (key === today) button.classList.add("is-today");
@@ -333,19 +360,20 @@ function renderCalendar() {
   const elapsedThrough = currentMonth ? now.getDate() : futureMonth ? 0 : daysInMonth;
   const elapsedWorkdays = eligibleWorkdays(year, month, elapsedThrough);
   const elapsedOfficeDays = elapsedWorkdays.filter((key) => officeDays.has(key));
-  const officeConfigured = validCoordinatePair(Number(settings.latitude), Number(settings.longitude));
-  elements.monthlyAttendance.textContent = officeConfigured && monthWorkdays.length
+  const officeConfigured = Boolean(configuredOfficeCoordinates());
+  const attendanceAvailable = officeConfigured || manualDays.size > 0;
+  elements.monthlyAttendance.textContent = attendanceAvailable && monthWorkdays.length
     ? `${Math.round(monthOfficeWorkdays.length / monthWorkdays.length * 100)}%`
     : "—";
-  elements.monthlyAttendanceNote.textContent = officeConfigured
+  elements.monthlyAttendanceNote.textContent = attendanceAvailable
     ? `${monthOfficeWorkdays.length} / ${monthWorkdays.length} eligible workdays`
-    : "Set your office location to calculate";
-  elements.attendanceToDate.textContent = officeConfigured && elapsedWorkdays.length
+    : "Set your office location or mark days manually";
+  elements.attendanceToDate.textContent = attendanceAvailable && elapsedWorkdays.length
     ? `${Math.round(elapsedOfficeDays.length / elapsedWorkdays.length * 100)}%`
     : "—";
-  elements.attendanceToDateNote.textContent = officeConfigured
+  elements.attendanceToDateNote.textContent = attendanceAvailable
     ? `${elapsedOfficeDays.length} / ${elapsedWorkdays.length} eligible workdays${futureMonth ? " (month hasn't started)" : ""}`
-    : "Set your office location to calculate";
+    : "Set your office location or mark days manually";
 
   if (!selectedDay || !selectedDay.startsWith(monthPrefix)) {
     selectedDay = currentMonth ? today : monthOfficeDays.sort().at(-1) || `${monthPrefix}01`;
@@ -361,6 +389,7 @@ function renderSelectedDay() {
     elements.selectedDateTitle.textContent = "Select a day";
     elements.selectedDateSummary.textContent = "Choose a date to see visits or manage exclusions.";
     elements.dateExclusionControls.hidden = true;
+    elements.manualAttendanceControls.hidden = true;
     const empty = document.createElement("div");
     empty.className = "empty-state compact-empty";
     empty.textContent = "No date selected yet.";
@@ -369,9 +398,10 @@ function renderSelectedDay() {
   }
   const date = new Date(`${selectedDay}T12:00:00`);
   elements.selectedDateTitle.textContent = date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-  elements.selectedDateSummary.textContent = dayVisits
-    ? `${dayVisits.length} ${dayVisits.length === 1 ? "visit" : "visits"} at ${settings.name || "your office"}`
-    : "No matching office visits on this date.";
+  const isManualDay = manualDays.has(selectedDay);
+  elements.selectedDateSummary.textContent = dayVisits?.length
+    ? `${dayVisits.length} ${dayVisits.length === 1 ? "visit" : "visits"} at ${settings.name || "your office"}${isManualDay ? " · also added manually" : ""}`
+    : isManualDay ? "Manually added as an office day." : "No matching office visits on this date.";
   const exclusion = exclusions[selectedDay];
   elements.dateExclusionControls.hidden = false;
   elements.dateExclusionStatus.textContent = exclusion
@@ -380,10 +410,15 @@ function renderSelectedDay() {
   elements.markHoliday.disabled = exclusion === "holiday";
   elements.markLeave.disabled = exclusion === "leave";
   elements.clearExclusion.disabled = !exclusion;
-  if (!dayVisits) {
+  elements.manualAttendanceControls.hidden = false;
+  elements.manualAttendanceStatus.textContent = isManualDay
+    ? "This date is manually counted as an office day."
+    : "Add a day here if Timeline data is unavailable or missing.";
+  elements.toggleManualAttendance.textContent = isManualDay ? "Remove manual office day" : "Mark as office day";
+  if (!dayVisits?.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state compact-empty";
-    empty.textContent = "No matching visits on this date.";
+    empty.textContent = isManualDay ? "No Timeline visits recorded; manual attendance is counted." : "No matching visits on this date.";
     elements.dayVisits.append(empty);
     return;
   }
@@ -417,12 +452,14 @@ function renderSelectedDay() {
 
 function renderDataStatus() {
   const officeCount = officeVisits().length;
-  const officeConfigured = validCoordinatePair(Number(settings.latitude), Number(settings.longitude));
+  const officeConfigured = Boolean(configuredOfficeCoordinates());
   elements.dataPanel.classList.toggle("has-data", visits.length > 0);
-  elements.exportData.disabled = visits.length === 0 && Object.keys(exclusions).length === 0 && !officeConfigured;
+  elements.exportData.disabled = visits.length === 0 && manualDays.size === 0 && Object.keys(exclusions).length === 0 && !officeConfigured;
   elements.clearData.disabled = visits.length === 0;
   if (visits.length === 0) {
-    elements.dataSummary.textContent = "No visits imported yet.";
+    elements.dataSummary.textContent = manualDays.size
+      ? `No Timeline visits imported · ${manualDays.size} office ${manualDays.size === 1 ? "day" : "days"} added manually.`
+      : "No Timeline visits imported yet. You can mark office days manually in the calendar.";
     return;
   }
   elements.dataSummary.textContent = `${visits.length.toLocaleString()} Timeline visits stored in this browser${officeConfigured ? ` · ${officeCount.toLocaleString()} match ${settings.name || "your office"}` : " · Set your office location to calculate attendance"}.`;
@@ -497,8 +534,8 @@ elements.settingsToggle.addEventListener("click", () => {
 
 elements.officeForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const latitude = Number(elements.officeLat.value);
-  const longitude = Number(elements.officeLon.value);
+  const latitude = elements.officeLat.value.trim() ? Number(elements.officeLat.value) : Number.NaN;
+  const longitude = elements.officeLon.value.trim() ? Number(elements.officeLon.value) : Number.NaN;
   const radius = Number(elements.officeRadius.value);
   if (!validCoordinatePair(latitude, longitude) || !Number.isFinite(radius) || radius < 20 || radius > 5000) {
     showStatus("Enter valid office coordinates and a radius between 20 and 5,000 metres.", true);
@@ -541,8 +578,24 @@ elements.clearExclusion.addEventListener("click", () => {
   renderAll();
 });
 
+elements.toggleManualAttendance.addEventListener("click", () => {
+  if (!selectedDay) return;
+  const nextManualDays = new Set(manualDays);
+  if (nextManualDays.has(selectedDay)) {
+    nextManualDays.delete(selectedDay);
+  } else {
+    nextManualDays.add(selectedDay);
+  }
+  if (!saveToStorage(MANUAL_DAYS_KEY, [...nextManualDays])) return;
+  manualDays = nextManualDays;
+  showStatus(manualDays.has(selectedDay)
+    ? "Manual office day saved."
+    : "Manual office day removed.", false);
+  renderAll();
+});
+
 elements.exportData.addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ visits, settings, exclusions }, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({ visits, settings, exclusions, manualDays: [...manualDays] }, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

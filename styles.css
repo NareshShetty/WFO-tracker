@@ -66,6 +66,7 @@ h2 { margin: 0 0 4px; font-size: 16px; letter-spacing: -.3px; }
 .calendar-card, .day-card { min-height: 325px; padding: 19px; }
 .legend { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; white-space: nowrap; }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+.legend-manual { width: 8px; height: 8px; margin-left: 4px; border-radius: 50%; background: var(--green); }
 .legend-exclusion { width: 8px; height: 8px; margin-left: 7px; border-radius: 50%; background: #f3e8d1; }
 .legend-weekend { width: 8px; height: 8px; margin-left: 7px; border-radius: 50%; background: #eef0f4; }
 .calendar { margin-top: 20px; }
@@ -73,6 +74,7 @@ h2 { margin: 0 0 4px; font-size: 16px; letter-spacing: -.3px; }
 .calendar-weekday { padding: 0 0 7px; color: #a0a8b7; font-size: 9px; font-weight: 700; }
 .calendar-day { display: grid; min-height: 35px; place-items: center; border: 1px solid transparent; border-radius: 8px; color: #68748a; font-size: 11px; }
 .calendar-day.is-office { background: var(--pale-blue); color: var(--primary); font-weight: 700; }
+.calendar-day.is-manual:not(.is-office) { background: #e8f6ef; color: #26835e; font-weight: 700; }
 .calendar-day.is-excluded { background: #fbf3e5; color: #916b2e; font-weight: 700; }
 .calendar-day.is-office.is-excluded { box-shadow: inset 0 0 0 1px #d7c49e; }
 .calendar-day.is-weekend:not(.is-office):not(.is-excluded) { color: #a0a8b7; }
@@ -94,6 +96,7 @@ h2 { margin: 0 0 4px; font-size: 16px; letter-spacing: -.3px; }
 .date-exclusion-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
 .date-exclusion-actions .button { min-height: 31px; padding: 0 10px; font-size: 10px; }
 .date-exclusion-actions .text-button { padding: 6px; }
+.manual-attendance-controls .button { min-height: 31px; padding: 0 10px; font-size: 10px; }
 .empty-state { display: grid; justify-items: center; padding: 28px 18px 22px; text-align: center; }
 .empty-state strong { margin-top: 8px; font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; }
 .empty-state p { max-width: 400px; margin: 6px 0 13px; color: var(--muted); font-size: 11px; line-height: 1.6; }
